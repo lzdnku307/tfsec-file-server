@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link href="/images/favicon.ico" rel="shortcut icon">
+
+  <!-- css -->
+  <link rel="stylesheet" type="text/css" href="/style/header.css" />
+  <link rel="stylesheet" type="text/css" href="/style/index.css" />
+  <link rel="stylesheet" type="text/css" href="/third/uploadify/uploadify.css" />
+
+  <!-- js -->
+  <script type="text/javascript" src="/third/jquery-1.12.4.min.js"></script>
+  <script type="text/javascript" src="/third/uploadify/jquery.uploadify.js" ></script>
+
+  <title>北京公交集团四层会商室文件上传系统</title>
+</head>
+<body>
+  <div class="container">
+    <% include ./header.html %>
+    <div class="index-wrapper">
+
+      <!--- 左导航-->
+      <div class="left-nav">
+        <div class="logo-wrapper">
+          <img src="/images/logo.png" />
+        </div>
+        <h2>北京公交集</h2>
+        <div id="nav-download" class="nav-button-active" onclick="showDownloadPage()">
+          <span>文件下载</span>
+        </div>
+        <div id="nav-upload" class="nav-button" onclick="showUploadPage();">
+          <span>文件上传</span>
+        </div>
+      </div>
+
+      <!-- 右侧内容 -->
+      <div class="right-content">
+
+        <!-- 文件下载页面 -->
+
+        <div class="download-wrapper">
+          <div class="download-header">
+            <span>可下载的文件</span>
+          </div>
+          <div class="download-items">
+          <% for(var i = 0; i < files.length; i++) { %>
+          <a href="/<%- files[i] %>" title="<%- files[i] %>" download="<%- files[i] %>"><%- files[i] %></a>
+          <% } %>
+          </div>
+        </div>
+
+        <!-- 文件上传页面 -->
+        <div class="upload-wrapper" style="display: none;">
+          <div class="upload-content-left">
+            <div class="file-upload-button-wrapper">
+              <div id="file_upload"></div>
+            </div>
+            <div id="file_upload_queue"></div>
+          </div>
+          <div class="upload-content-right">
+            <span class="upload-content-right-title">已上传文件</span>
+            <div class="uploaded-files">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript" >
+    //当前已经上传的文件
+    window.uploadedFiles = [];
+
+    function onclickDelete(id) {
+      var filename = $(id).attr('filename');
+
+      //从服务器中删除该文件
+      $.ajax({
+        url: '/delete/file',
+        type: 'POST',
+        data: {
+          filename: filename
+        },
+        dataType: 'json',
+        success: function(data) {
+          if(data.code === 0) {
+            $(id).remove();
+            //从全局变量中删除该文件
+            for(var i = 0; i < uploadedFiles.length; i ++) {
+              if(uploadedFiles[i] === filename) {
+                uploadedFiles.splice(i, 1);
+                break;
+              }
+            }
+          } else {
+            alert('删除文件出错!服务器错误:' + data.msg)
+          }
+        },
+        error: function(err) {
+          alert('网络错误:' + err);
+        }
+      });
+    }
+
+    //绑定点击导航事件
+    $('#nav-download, #nav-upload').bind('click', function(e) {
+      var innerHtml = e.target.innerHTML;
+      var current = '';
+      var other = '';
+      if(innerHtml === '文件下载') {
+        current = $('#nav-download');
+        other = $('#nav-upload');
+      } else {
+        current = $('#nav-upload');
+        other = $('#nav-download');
+      }
+      current.attr('class', 'nav-button-active');
+      other.attr('class', 'nav-button');
+    });
+
+    //上传插件配置
+    $(function() {
+      var uploadInstance = $('#file_upload');
+      uploadInstance.uploadify({
+        buttonText: '选择文件',
+        queueID: 'file_upload_queue',
+        'swf': '/third/uploadify/uploadify.swf',
+        'uploader': '/upload',
+        'fileSizeLimit': 0, //不做限制
+        'checkExisting': '/upload/check',   //检测上传的文件是否已经存在
+        onUploadSuccess: function(file, data, resp) {
+          addUploadedFileItem(file.name);
+        },
+      });
+    });
+
+    //添加已上传文件
+    function addUploadedFileItem(filename) {
+      uploadedFiles = uploadedFiles || [];
+      uploadedFiles.push(filename);
+      var uniqueId = 'file_item_' + new Date().getTime() + parseInt(Math.random() * 1000);
+      $('.uploaded-files')
+        .append('<div class="file-item" id="' + uniqueId + '" filename="' + filename + '" >\
+                  <span>' + filename + '</span>\
+                  <a href="javascript:;" onclick="onclickDelete(\'#' + uniqueId + '\');">删除</a>\
+                 </div>');
+    }
+
+    //构建文件上传列表
+    function buildUploadedFileList(files) {
+      files = files || [];
+      $('.uploaded-files').empty();
+      for(var i = 0; i < files.length; i++) {
+        addUploadedFileItem(files[i]);
+      }
+    }
+
+    //点击文件下载,显示文件下载页面
+    function showUploadPage() {
+      $.ajax({
+        url: '/upload/files',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+          if(data.code === 0) {
+            buildUploadedFileList(data.data);
+            $('.upload-wrapper').show();
+            $('.download-wrapper').hide();
+          } else {
+            alert('网络错误: 获取已下载文件数据失败!')
+          }
+        },
+        error: function() {
+          alert('网络错误: 获取已下载文件数据失败!')
+        }
+      });
+    }
+
+    //点击文件上传,显示文件上传页面
+    function showDownloadPage() {
+      $.ajax({
+        url: '/upload/files',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+          if(data.code === 0) {
+            var files = data.data;
+
+            $('.download-items').empty();
+
+            for(var i = 0; i < files.length; i++) {
+              $('.download-items').append('<a href="' + files[i] + '" title="'
+              + files[i] + '" download="' + files[i] + '">' + files[i] + '</a>');
+            }
+
+            $('.upload-wrapper').hide();
+            $('.download-wrapper').show();
+          } else {
+            alert('网络错误: 获取已下载文件数据失败!')
+          }
+        },
+        error: function() {
+          alert('网络错误: 获取已下载文件数据失败!')
+        }
+      });
+    }
+
+  </script>
+</body>
+</html>

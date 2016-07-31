@@ -1,0 +1,19 @@
+.header-container {
+  width: 100%;
+  height: 56px;
+  background-color: #353138;
+}
+
+.header-content {
+  width: 1084px;
+  height: 100%;
+  margin: 0 auto;
+}
+
+.header-content h1 {
+  float: left;
+  color: #FFF;
+  font-size: 20px;
+  margin: 0;
+  line-height: 56px;
+}
