@@ -11,6 +11,7 @@ module.exports = function(app) {
 
 
   app.get('/upload/files', run(ctrls.upload.get));
+
   app.post('/upload', run(ctrls.upload.upload));
 
   app.post('/upload/check', run(ctrls.upload.checkExisting));

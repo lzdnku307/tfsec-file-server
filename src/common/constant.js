@@ -6,6 +6,7 @@
 module.exports = {
   RENDER_FILE: 1,
   SEND_JSON: 2,
+  SEND_NOT_JSON: 3,
 
   UPLOAD_STATUS: {
     SUCCESS: '1',

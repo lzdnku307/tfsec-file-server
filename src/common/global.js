@@ -19,4 +19,7 @@ global.Exception = function (code, msg) {
   this.stack = new Error(this.code + ': ' + this.msg).stack;
 };
 
+//保存所有链接用户信息,以token为键值
+global.users = {};
+
 global.ctrls = require('./controller');

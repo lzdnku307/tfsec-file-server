@@ -25,11 +25,11 @@
         <div class="logo-wrapper">
           <img src="/images/logo.png" />
         </div>
-        <h2>北京公交集</h2>
-        <div id="nav-download" class="nav-button-active" onclick="showDownloadPage()">
+        <h2>北京公交集团</h2>
+        <div id="nav-download" class="nav-button" onclick="showDownloadPage()">
           <span>文件下载</span>
         </div>
-        <div id="nav-upload" class="nav-button" onclick="showUploadPage();">
+        <div id="nav-upload" class="nav-button-active" onclick="showUploadPage();">
           <span>文件上传</span>
         </div>
       </div>
@@ -39,19 +39,16 @@
 
         <!-- 文件下载页面 -->
 
-        <div class="download-wrapper">
+        <div class="download-wrapper" style="display: none;">
           <div class="download-header">
             <span>可下载的文件</span>
           </div>
           <div class="download-items">
-          <% for(var i = 0; i < files.length; i++) { %>
-          <a href="/<%- files[i] %>" title="<%- files[i] %>" download="<%- files[i] %>"><%- files[i] %></a>
-          <% } %>
           </div>
         </div>
 
         <!-- 文件上传页面 -->
-        <div class="upload-wrapper" style="display: none;">
+        <div class="upload-wrapper" >
           <div class="upload-content-left">
             <div class="file-upload-button-wrapper">
               <div id="file_upload"></div>
@@ -61,6 +58,13 @@
           <div class="upload-content-right">
             <span class="upload-content-right-title">已上传文件</span>
             <div class="uploaded-files">
+              <% for(var i = 0; i < files.length; i++) { %>
+              <% var uniqueId = 'file_item_' + new Date().getTime() + parseInt(Math.random() * 1000); %>
+              <div class="file-item" id="<%- uniqueId %>" filename="<%- files[i] %>" >
+                <span><%- files[i] %></span>
+                <a href="javascript:;" onclick="onclickDelete('#<%- uniqueId %>');">删除</a>
+              </div>
+              <% } %>
             </div>
           </div>
         </div>
@@ -71,10 +75,22 @@
 
   <script type="text/javascript" >
     //当前已经上传的文件
-    window.uploadedFiles = [];
+    window.uploadedFiles = <%- JSON.stringify(files) %>;
+
+    function hasUploaded(file) {
+      for(var i = 0; i < uploadedFiles.length; i++) {
+        if(file === uploadedFiles[i]) {
+          return true;
+        }
+      }
+      return false;
+    }
 
     function onclickDelete(id) {
       var filename = $(id).attr('filename');
+      if(!confirm('确定删除文件:' + filename + '?')) {
+        return;
+      }
 
       //从服务器中删除该文件
       $.ajax({
@@ -139,6 +155,9 @@
     //添加已上传文件
     function addUploadedFileItem(filename) {
       uploadedFiles = uploadedFiles || [];
+      if(hasUploaded(filename)) {
+        return;
+      }
       uploadedFiles.push(filename);
       var uniqueId = 'file_item_' + new Date().getTime() + parseInt(Math.random() * 1000);
       $('.uploaded-files')
@@ -157,14 +176,18 @@
       }
     }
 
-    //点击文件下载,显示文件下载页面
+    //点击文件上传,显示文件上传页面
     function showUploadPage() {
       $.ajax({
         url: '/upload/files',
         type: 'GET',
         dataType: 'json',
+        data: {
+          all: 0
+        },
         success: function(data) {
           if(data.code === 0) {
+            uploadedFiles = [];
             buildUploadedFileList(data.data);
             $('.upload-wrapper').show();
             $('.download-wrapper').hide();
@@ -178,12 +201,15 @@
       });
     }
 
-    //点击文件上传,显示文件上传页面
+    //点击文件下载,显示文件下载页面
     function showDownloadPage() {
       $.ajax({
         url: '/upload/files',
         type: 'GET',
         dataType: 'json',
+        data: {
+          all: 1
+        },
         success: function(data) {
           if(data.code === 0) {
             var files = data.data;

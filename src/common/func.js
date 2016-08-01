@@ -3,6 +3,7 @@
  */
 'use strict';
 
+//驼峰
 _.toCamel = function(str) {
   str = str || '';
   let arr = str.split('_');
@@ -15,6 +16,7 @@ _.toCamel = function(str) {
   return arr.join('');
 };
 
+//渲染页面
 _.render = function(htmlFile, options) {
   options = options || {};
 
@@ -23,4 +25,17 @@ _.render = function(htmlFile, options) {
     htmlFile: htmlFile,
     options: options
   };
+};
+
+//创建token
+_.createToken = function(len) {
+  len = len || 32;  //默认长度为32位
+  let seed = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let seedLen = seed.length - 1;
+  let ret = '';
+  for(let i = 0; i < len; i++) {
+    ret += seed[parseInt(seedLen * Math.random())];
+  }
+
+  return ret;
 };

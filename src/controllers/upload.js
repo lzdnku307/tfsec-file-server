@@ -10,10 +10,19 @@ let path = require('path');
 let Ctrl = function() {};
 let that = module.exports = new Ctrl();
 
-Ctrl.prototype.get = function*(req,res) {
-  return fs.readdirSync(config.uploadDir);
+/*
+* 获取已上传文件
+* param all   boolean
+ */
+Ctrl.prototype.get = function* (req,res) {
+  if(parseInt(req.query.all)) {
+    return fs.readdirSync(config.uploadDir);
+  } else {
+    return req.session.files || [];
+  }
 };
 
+//上传文件
 Ctrl.prototype.upload = function* (req, res) {
   let ret = 'ok';
   try {
@@ -32,6 +41,18 @@ Ctrl.prototype.upload = function* (req, res) {
     let realFile = path.join(config.uploadDir, fileName);
     fs.renameSync(tmpFile, realFile);
 
+    //将用户上传的文件保存到对应的session中
+    req.session.files = req.session.files || [];
+    let i = 0;
+    for(; i < req.session.files.length; i++) {
+      if(fileName === req.session.files[i]) {
+        break;
+      }
+    }
+    if(i === req.session.files.length) {
+      req.session.files.push(fileName);
+    }
+
     ret = '上传成功!';
   } catch(e) {
     res.status(404);
@@ -44,17 +65,25 @@ Ctrl.prototype.upload = function* (req, res) {
 //查看是否有相同的文件
 Ctrl.prototype.checkExisting = function* (req, res) {
   let filename = req.body.filename;
-  if(!filename) return CONSTANT.UPLOAD_STATUS.FILE_NOT_EXSIST;
+  let ret = {
+    type: CONSTANT.SEND_NOT_JSON
+  };
+  if(!filename) {
+    ret.data = CONSTANT.UPLOAD_STATUS.FILE_NOT_EXSIST;
+    return ret;
+  };
   filename = filename.toLowerCase();
 
   //读取下载目录下所有文件
   let dirs = fs.readdirSync(config.uploadDir);
   while(dirs.length) {
     if(dirs.pop().toLowerCase() === filename) {
-      return CONSTANT.UPLOAD_STATUS.FILE_EXSIST;
+      ret.data = CONSTANT.UPLOAD_STATUS.FILE_EXSIST;
+      return ret;
     }
   }
-  return CONSTANT.UPLOAD_STATUS.FILE_NOT_EXSIST;
+  ret.data = CONSTANT.UPLOAD_STATUS.FILE_NOT_EXSIST;
+  return ret;
 };
 
 Ctrl.prototype.delete = function*(req, res) {
@@ -66,6 +95,14 @@ Ctrl.prototype.delete = function*(req, res) {
 
   try {
     fs.unlinkSync(filePath);
+    let uploadedFiles = req.session.files || [];
+    for(let i = 0; i < uploadedFiles.length; i ++) {
+      if(uploadedFiles[i] === filename) {
+        uploadedFiles.splice(i, 1);
+        break;
+      }
+    }
+    req.session.files = uploadedFiles;
     return 'ok';
   } catch(e) {
     throw new Exception(1002);

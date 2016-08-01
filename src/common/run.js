@@ -17,6 +17,8 @@ module.exports = function(func) {
       if(data.type === CONSTANT.RENDER_FILE) {
         //页面渲染
         res.render(data.htmlFile, data.options);
+      } else if(data.type === CONSTANT.SEND_NOT_JSON) {
+        res.send(data.data);
       } else {
         res.send({
           code: 0,

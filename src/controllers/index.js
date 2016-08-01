@@ -10,7 +10,7 @@ let Ctrl = function() {};
 let that = module.exports = new Ctrl();
 
 Ctrl.prototype.get = function*(req, res) {
-  let files = fs.readdirSync(config.uploadDir);
+  let files = req.session.files || [];
 
-  return _.render('index', {files: files || []});
+  return _.render('index', {files: files});
 };

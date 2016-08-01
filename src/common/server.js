@@ -6,6 +6,7 @@
 let express = require('express');
 let ejs = require('ejs');
 let path = require('path');
+let session = require('express-session');
 
 let router = require('./router');
 
@@ -22,6 +23,7 @@ app.use(require('cookie-parser')());
 app.use(express.static(__dirname + '/../static/'));
 app.use(express.static(config.uploadDir));
 
+app.use(session({ secret: 'tfsec-file-server', cookie: { maxAge: config.session.expired }}));
 
 router(app);
 
