@@ -77,6 +77,9 @@
     //当前已经上传的文件
     window.uploadedFiles = <%- JSON.stringify(files) %>;
 
+    //ie8 款存问题
+    $.ajaxSetup({ cache: false });
+
     function hasUploaded(file) {
       for(var i = 0; i < uploadedFiles.length; i++) {
         if(file === uploadedFiles[i]) {
@@ -140,15 +143,15 @@
     $(function() {
       var uploadInstance = $('#file_upload');
       uploadInstance.uploadify({
-        buttonText: '选择文件',
-        queueID: 'file_upload_queue',
+        'buttonText': '选择文件',
+        'queueID': 'file_upload_queue',
         'swf': '/third/uploadify/uploadify.swf',
         'uploader': '/upload',
         'fileSizeLimit': 0, //不做限制
         'checkExisting': '/upload/check',   //检测上传的文件是否已经存在
         onUploadSuccess: function(file, data, resp) {
           addUploadedFileItem(file.name);
-        },
+        }
       });
     });
 
